@@ -1370,6 +1370,14 @@ void ABattleObject::TriggerEvent(EEventType EventType, FGameplayTag StateMachine
 	}
 }
 
+void ABattleObject::UpdateCel()
+{
+	if (TimeUntilNextCel > 0)
+		TimeUntilNextCel--;
+	if (TimeUntilNextCel == 0)
+		CelIndex++;
+}
+
 //for collision viewer
 
 template <typename T>
@@ -1978,10 +1986,7 @@ void ABattleObject::Update()
 		if (LinkedActor)
 			LinkedActor->Update();
 		
-		if (TimeUntilNextCel > 0)
-			TimeUntilNextCel--;
-		if (TimeUntilNextCel == 0)
-			CelIndex++;
+		UpdateCel();
 		
 		Move();
 		

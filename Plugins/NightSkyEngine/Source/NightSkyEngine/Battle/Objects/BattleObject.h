@@ -1334,7 +1334,8 @@ public:
 	//handles flip
 	void HandleFlip();
 	void TriggerEvent(EEventType EventType, FGameplayTag StateMachineName);
-
+	void UpdateCel();
+	
 	UFUNCTION(BlueprintCallable)
 	void CollisionView();
 

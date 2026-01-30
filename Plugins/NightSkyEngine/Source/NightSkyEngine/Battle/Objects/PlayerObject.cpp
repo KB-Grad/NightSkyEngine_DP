@@ -486,10 +486,7 @@ void APlayerObject::Update()
 			StateMachine.Update();
 		}
 
-		if (TimeUntilNextCel > 0)
-			TimeUntilNextCel--;
-		if (TimeUntilNextCel == 0)
-			CelIndex++;
+		UpdateCel();
 
 		if (ActionTime < ThrowTechTimer)
 		{
@@ -789,7 +786,8 @@ void APlayerObject::Update()
 	}
 
 	TriggerEvent(EVT_Update, StateMachine_Primary);
-	
+	UpdateCel();
+
 	if (PrimaryStateMachine.CurrentState->StateType == EStateType::Hitstun)
 	{
 		if (GetCurrentStateName(StateMachine_Primary) == State_Universal_FaceDownBounce
@@ -803,11 +801,6 @@ void APlayerObject::Update()
 	{
 		Gauge.Value = FMath::Clamp(Gauge.Value, 0, Gauge.MaxValue);
 	}
-	
-	if (TimeUntilNextCel > 0)
-		TimeUntilNextCel--;
-	if (TimeUntilNextCel == 0)
-		CelIndex++;
 
 	if (PrimaryStateMachine.CurrentState->StateType == EStateType::Hitstun && ReceivedHit.WallBounce.WallBounceCount > 0
 		&& PosY > GroundHeight)
@@ -837,10 +830,7 @@ void APlayerObject::UpdateNotBattle()
 {
 	Player->PrimaryStateMachine.Update();
 
-	if (TimeUntilNextCel > 0)
-		TimeUntilNextCel--;
-	if (TimeUntilNextCel == 0)
-		CelIndex++;
+	UpdateCel();
 	GetBoxes();
 
 	UpdateVisuals();
@@ -1990,6 +1980,7 @@ void APlayerObject::HandleBufferedState(FStateMachine& StateMachine)
 	{
 		if (StateMachine.ForceSetState(BufferedStateName))
 		{
+			BufferedStateName = FGameplayTag::EmptyTag;
 			GotoLabelActive = false;
 			switch (StateMachine.CurrentState->EntryStance)
 			{
@@ -2006,7 +1997,6 @@ void APlayerObject::HandleBufferedState(FStateMachine& StateMachine)
 				break;
 			}
 		}
-		BufferedStateName = FGameplayTag::EmptyTag;
 	}
 }
 
