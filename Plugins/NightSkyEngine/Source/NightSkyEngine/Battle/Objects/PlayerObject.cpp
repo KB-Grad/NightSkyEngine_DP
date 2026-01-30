@@ -692,6 +692,8 @@ void APlayerObject::Update()
 		}
 		else if (PosY == GroundHeight && PrevPosY == GroundHeight 
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_Crumple 
+			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceDownBounce
+			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceUpBounce
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceDownLoop 
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceUpLoop
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceDownWakeUp 
