@@ -1995,8 +1995,8 @@ void ABattleObject::Update()
 
 		if (MiscFlags & MISC_DeactivateIfBeyondBounds)
 		{
-			if (PosX > GameState->BattleState.ScreenData.ScreenBoundsRight * 1000 + 105000
-				|| PosX < GameState->BattleState.ScreenData.ScreenBoundsLeft * 1000 - 105000)
+			if (PosX > GameState->BattleState.ScreenData.ScreenBoundsRight * 1000 + 85000
+				|| PosX < GameState->BattleState.ScreenData.ScreenBoundsLeft * 1000 - 85000)
 				DeactivateObject();
 		}
 	}
