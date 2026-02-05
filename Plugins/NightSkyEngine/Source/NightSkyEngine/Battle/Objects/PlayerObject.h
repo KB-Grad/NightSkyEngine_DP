@@ -716,7 +716,7 @@ private:
 	//handles throwing objects
 	void HandleThrowCollision();
 	//checks kara cancel
-	bool CheckKaraCancel(EStateType InStateType, const FStateMachine& StateMachine);
+	bool CheckKaraCancel(EStateType InStateType, const FGameplayTag& CustomStateType, const FStateMachine& StateMachine);
 	//checks if a child object with a corresponding object id exists. if so, do not enter state 
 	bool CheckObjectPreventingState(int InObjectID) const;
 	//handles wall bounce

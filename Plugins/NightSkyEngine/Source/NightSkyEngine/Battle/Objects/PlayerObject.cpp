@@ -1696,7 +1696,7 @@ bool APlayerObject::CanEnterState(UState* State, FGameplayTag StateMachineName)
 			|| FindChainCancelOption(State->Name, StateMachine)
 			|| FindAutoComboCancelOption(State->Name, StateMachine)
 			|| FindWhiffCancelOption(State->Name, StateMachine)
-			|| (CheckKaraCancel(State->StateType, StateMachine)
+			|| (CheckKaraCancel(State->StateType, State->CustomStateType, StateMachine)
 				&& !State->IsFollowupState
 				&& StateMachine.GetStateIndex(State->Name) > StateMachine.GetStateIndex(GetStateEntryName()))
 		)) //check if the state is enabled
@@ -2274,7 +2274,7 @@ void APlayerObject::HandleThrowCollision()
 	}
 }
 
-bool APlayerObject::CheckKaraCancel(EStateType InStateType, const FStateMachine& StateMachine)
+bool APlayerObject::CheckKaraCancel(EStateType InStateType, const FGameplayTag& CustomStateType, const FStateMachine& StateMachine)
 {
 	if ((CancelFlags & CNC_EnableKaraCancel) == 0 || PlayerFlags & PLF_DidKaraCancel)
 	{
@@ -2284,7 +2284,7 @@ bool APlayerObject::CheckKaraCancel(EStateType InStateType, const FStateMachine&
 	if (ActionTime >= 3)
 		return false;
 
-	if (InStateType == StateMachine.CurrentState->StateType)
+	if (InStateType == StateMachine.CurrentState->StateType && CustomStateType == StateMachine.CurrentState->CustomStateType)
 	{
 		PlayerFlags |= PLF_DidKaraCancel;
 		return true;
@@ -2810,9 +2810,7 @@ void APlayerObject::OnStateChange()
 	NextOffsetY = 0;
 
 	// Reset root motion params
-	PrevRootMotionX = 0;
-	PrevRootMotionY = 0;
-	PrevRootMotionZ = 0;
+	ApplyRootMotion();
 
 	// Reset angle
 	AnglePitch_x1000 = 0;
