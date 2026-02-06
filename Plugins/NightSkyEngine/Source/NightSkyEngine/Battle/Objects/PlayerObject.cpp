@@ -573,7 +573,7 @@ void APlayerObject::Update()
 		{
 			if (IsMainPlayer())
 			{
-				if (!(PlayerFlags & PLF_DeathCamOverride))
+				if (!(PlayerFlags & PLF_DeathCamOverride) && AttackOwner)
 				{
 					if (ReceivedHitCommon.AttackLevel < 2)
 					{
@@ -592,7 +592,7 @@ void APlayerObject::Update()
 				}
 			}
 		}
-		if (Enemy->CurrentHealth == 0 && (Enemy->PlayerFlags & PLF_IsDead) == 0)
+		if (Enemy->CurrentHealth == 0 && (Enemy->PlayerFlags & PLF_IsDead) == 0 && AttackOwner)
 		{
 			AddCommonBattleObject(State_BattleObject_KO_Draw);
 			Hitstop = 1;
