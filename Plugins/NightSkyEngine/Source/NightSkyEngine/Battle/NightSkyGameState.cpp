@@ -1213,9 +1213,9 @@ void ANightSkyGameState::SetScreenBounds() const
 					}
 				}
 
-				if (SortedObjects[i]->PosY >= ScreenData->ScreenBoundsTop * 1000)
+				if (SortedObjects[i]->PosY >= ScreenData->StageBoundsTop * 1000)
 				{
-					SortedObjects[i]->PosY = ScreenData->ScreenBoundsTop * 1000;
+					SortedObjects[i]->PosY = ScreenData->StageBoundsTop * 1000;
 				}
 			}
 		}

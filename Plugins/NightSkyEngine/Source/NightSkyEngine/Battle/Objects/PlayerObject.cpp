@@ -486,10 +486,7 @@ void APlayerObject::Update()
 			StateMachine.Update();
 		}
 
-		if (TimeUntilNextCel > 0)
-			TimeUntilNextCel--;
-		if (TimeUntilNextCel == 0)
-			CelIndex++;
+		UpdateCel();
 
 		if (ActionTime < ThrowTechTimer)
 		{
@@ -576,7 +573,7 @@ void APlayerObject::Update()
 		{
 			if (IsMainPlayer())
 			{
-				if (!(PlayerFlags & PLF_DeathCamOverride))
+				if (!(PlayerFlags & PLF_DeathCamOverride) && AttackOwner)
 				{
 					if (ReceivedHitCommon.AttackLevel < 2)
 					{
@@ -595,7 +592,7 @@ void APlayerObject::Update()
 				}
 			}
 		}
-		if (Enemy->CurrentHealth == 0 && (Enemy->PlayerFlags & PLF_IsDead) == 0)
+		if (Enemy->CurrentHealth == 0 && (Enemy->PlayerFlags & PLF_IsDead) == 0 && AttackOwner)
 		{
 			AddCommonBattleObject(State_BattleObject_KO_Draw);
 			Hitstop = 1;
@@ -695,6 +692,8 @@ void APlayerObject::Update()
 		}
 		else if (PosY == GroundHeight && PrevPosY == GroundHeight 
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_Crumple 
+			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceDownBounce
+			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceUpBounce
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceDownLoop 
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceUpLoop
 			&& GetCurrentStateName(StateMachine_Primary) != State_Universal_FaceDownWakeUp 
@@ -789,7 +788,8 @@ void APlayerObject::Update()
 	}
 
 	TriggerEvent(EVT_Update, StateMachine_Primary);
-	
+	UpdateCel();
+
 	if (PrimaryStateMachine.CurrentState->StateType == EStateType::Hitstun)
 	{
 		if (GetCurrentStateName(StateMachine_Primary) == State_Universal_FaceDownBounce
@@ -803,11 +803,6 @@ void APlayerObject::Update()
 	{
 		Gauge.Value = FMath::Clamp(Gauge.Value, 0, Gauge.MaxValue);
 	}
-	
-	if (TimeUntilNextCel > 0)
-		TimeUntilNextCel--;
-	if (TimeUntilNextCel == 0)
-		CelIndex++;
 
 	if (PrimaryStateMachine.CurrentState->StateType == EStateType::Hitstun && ReceivedHit.WallBounce.WallBounceCount > 0
 		&& PosY > GroundHeight)
@@ -837,10 +832,7 @@ void APlayerObject::UpdateNotBattle()
 {
 	Player->PrimaryStateMachine.Update();
 
-	if (TimeUntilNextCel > 0)
-		TimeUntilNextCel--;
-	if (TimeUntilNextCel == 0)
-		CelIndex++;
+	UpdateCel();
 	GetBoxes();
 
 	UpdateVisuals();
@@ -1704,7 +1696,7 @@ bool APlayerObject::CanEnterState(UState* State, FGameplayTag StateMachineName)
 			|| FindChainCancelOption(State->Name, StateMachine)
 			|| FindAutoComboCancelOption(State->Name, StateMachine)
 			|| FindWhiffCancelOption(State->Name, StateMachine)
-			|| (CheckKaraCancel(State->StateType, StateMachine)
+			|| (CheckKaraCancel(State->StateType, State->CustomStateType, StateMachine)
 				&& !State->IsFollowupState
 				&& StateMachine.GetStateIndex(State->Name) > StateMachine.GetStateIndex(GetStateEntryName()))
 		)) //check if the state is enabled
@@ -1990,6 +1982,7 @@ void APlayerObject::HandleBufferedState(FStateMachine& StateMachine)
 	{
 		if (StateMachine.ForceSetState(BufferedStateName))
 		{
+			BufferedStateName = FGameplayTag::EmptyTag;
 			GotoLabelActive = false;
 			switch (StateMachine.CurrentState->EntryStance)
 			{
@@ -2006,7 +1999,6 @@ void APlayerObject::HandleBufferedState(FStateMachine& StateMachine)
 				break;
 			}
 		}
-		BufferedStateName = FGameplayTag::EmptyTag;
 	}
 }
 
@@ -2282,7 +2274,7 @@ void APlayerObject::HandleThrowCollision()
 	}
 }
 
-bool APlayerObject::CheckKaraCancel(EStateType InStateType, const FStateMachine& StateMachine)
+bool APlayerObject::CheckKaraCancel(EStateType InStateType, const FGameplayTag& CustomStateType, const FStateMachine& StateMachine)
 {
 	if ((CancelFlags & CNC_EnableKaraCancel) == 0 || PlayerFlags & PLF_DidKaraCancel)
 	{
@@ -2292,7 +2284,7 @@ bool APlayerObject::CheckKaraCancel(EStateType InStateType, const FStateMachine&
 	if (ActionTime >= 3)
 		return false;
 
-	if (InStateType == StateMachine.CurrentState->StateType)
+	if (InStateType == StateMachine.CurrentState->StateType && CustomStateType == StateMachine.CurrentState->CustomStateType)
 	{
 		PlayerFlags |= PLF_DidKaraCancel;
 		return true;
@@ -2818,9 +2810,7 @@ void APlayerObject::OnStateChange()
 	NextOffsetY = 0;
 
 	// Reset root motion params
-	PrevRootMotionX = 0;
-	PrevRootMotionY = 0;
-	PrevRootMotionZ = 0;
+	ApplyRootMotion();
 
 	// Reset angle
 	AnglePitch_x1000 = 0;
