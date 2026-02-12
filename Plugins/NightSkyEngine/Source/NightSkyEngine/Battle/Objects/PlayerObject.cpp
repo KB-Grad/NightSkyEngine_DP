@@ -3427,6 +3427,11 @@ void APlayerObject::RemoveWhiffCancelOption(FGameplayTag Option)
 	WhiffCancelOptions.Remove(PrimaryStateMachine.GetStateIndex(Option));
 }
 
+void APlayerObject::ClearMovesUsedInChain()
+{
+	MovesUsedInChain.Empty();
+}
+
 void APlayerObject::EnableChainCancel(bool Enable)
 {
 	if (Enable)

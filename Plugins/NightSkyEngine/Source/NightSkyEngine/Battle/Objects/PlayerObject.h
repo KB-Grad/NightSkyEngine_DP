@@ -923,6 +923,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RemoveWhiffCancelOption(FGameplayTag Option);
 	UFUNCTION(BlueprintCallable)
+	void ClearMovesUsedInChain();
+	UFUNCTION(BlueprintCallable)
 	void EnableChainCancel(bool Enable);
 	//sets whiff cancel options enabled. off by default
 	UFUNCTION(BlueprintCallable)
