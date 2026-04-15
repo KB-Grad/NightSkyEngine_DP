@@ -978,6 +978,9 @@ public:
 	//set stun time
 	UFUNCTION(BlueprintCallable)
 	void SetStunTime(int32 NewTime);
+	//sets stun time to 0 and clears the IsStunned player flag
+	UFUNCTION(BlueprintCallable)
+	void ForceUnstun();
 	//based on received hit data, set values
 	UFUNCTION(BlueprintCallable)
 	void SetHitValues(bool bCustomAir = false);

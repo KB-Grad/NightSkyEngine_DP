@@ -3625,3 +3625,9 @@ void APlayerObject::SetStunTime(int32 NewTime)
 {
 	StunTime = NewTime;
 }
+
+void APlayerObject::ForceUnstun()
+{
+	StunTime = 0;
+	PlayerFlags &= ~PLF_IsStunned;
+}

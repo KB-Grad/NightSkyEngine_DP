@@ -1228,9 +1228,12 @@ FHitData ABattleObject::InitHitDataByAttackLevel(bool IsCounter)
 
 void ABattleObject::HandleClashCollision(ABattleObject* OtherObj)
 {
-	if (AttackFlags & ATK_IsAttacking && AttackFlags & ATK_HitActive && OtherObj->Player->PlayerIndex != Player->
-		PlayerIndex
-		&& OtherObj->AttackFlags & ATK_IsAttacking && OtherObj->AttackFlags & ATK_HitActive)
+	if (AttackFlags & ATK_IsAttacking 
+		&& AttackFlags & ATK_HitActive 
+		&& OtherObj->Player->PlayerIndex != Player->PlayerIndex
+		&& OtherObj->AttackFlags & ATK_IsAttacking 
+		&& OtherObj->AttackFlags & ATK_HitActive
+		&& (OtherObj->HitCommon.CanClash && HitCommon.CanClash))
 	{
 		if (CheckBoxOverlap(OtherObj, BOX_Hit, FGameplayTag::EmptyTag, BOX_Hit, FGameplayTag::EmptyTag))
 		{

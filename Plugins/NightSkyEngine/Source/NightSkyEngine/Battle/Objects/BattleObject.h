@@ -110,6 +110,9 @@ struct FHitDataCommon
 	 */
 	UPROPERTY(BlueprintReadWrite, meta=(ClampMin=0, ClampMax=5))
 	int32 AttackLevel = 0;
+	// If the attack can clash with other attacks
+	UPROPERTY(BlueprintReadWrite)
+	bool CanClash = true;
 	// How the opponent must block the attack.
 	UPROPERTY(BlueprintReadWrite)
 	TEnumAsByte<EBlockType> BlockType = BLK_Mid;
