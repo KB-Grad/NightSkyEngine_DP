@@ -402,6 +402,7 @@ void ABattleObject::Tick(float DeltaTime)
 	if (!GameState)
 	{
 		ScreenSpaceDepthOffset = 0;
+		OrthoBlendActive = 1;
 	}
 }
 
@@ -483,8 +484,8 @@ void ABattleObject::HandlePushCollision(ABattleObject* OtherObj)
 					CollisionDepth = OtherObj->R - L;
 				}
 
-				if ((IsPlayer && Player->PlayerFlags & PLF_TouchingWall) 
-					|| (OtherObj->IsPlayer && OtherObj->Player->PlayerFlags & PLF_TouchingWall))
+				if (IsPlayer && Player->PlayerFlags & PLF_TouchingWall 
+					|| OtherObj->IsPlayer && OtherObj->Player->PlayerFlags & PLF_TouchingWall)
 				{
 					OtherObj->PosX -= CollisionDepth;
 					PosX += CollisionDepth;
@@ -508,66 +509,7 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 		== INDEX_NONE && !AttackedObj->Player->IsInvulnerable(this))
 	{
 		auto AttackedPlayer = Cast<APlayerObject>(AttackedObj);
-		if (!AttackedPlayer)
-		{
-			if (CheckBoxOverlap(AttackedObj, BOX_Hit, FGameplayTag::EmptyTag, BOX_Hurt, FGameplayTag::EmptyTag))
-			{
-				AttackedObj->AttackOwner = this;
-				AttackedObj->ObjectsToIgnoreHitsFrom.AddUnique(this);
-				AttackFlags |= ATK_HasHit;
-				if (AttackFlags & ATK_SetPlayerHit) Player->AttackFlags |= ATK_HasHit;
-				AttackTarget = AttackedObj;
-
-				if (AttackedObj->SuperArmorSuccess(this))
-				{
-					TriggerEvent(EVT_Hit, StateMachine_Primary);
-
-					if (AttackedObj->SuperArmorData.ArmorHits > 0)
-						AttackedObj->SuperArmorData.ArmorHits--;
-
-					switch (AttackedObj->SuperArmorData.Type)
-					{
-					case ARM_Guard:
-						{
-							const FHitData Data = InitHitDataByAttackLevel(false);
-							AttackedObj->ReceivedHitCommon = HitCommon;
-							AttackedObj->ReceivedHit = Data;
-
-							Hitstop = Data.Hitstop;
-							AttackedObj->Hitstop = Data.Hitstop;
-						}
-						break;
-					case ARM_Dodge:
-					default:
-						break;
-					}
-
-					if (AttackedObj->SuperArmorData.bArmorDisableIncomingHit)
-						EnableHit(false);
-					return;
-				}
-				
-				CallSubroutine(Subroutine_Cmn_OnHit);
-
-				TriggerEvent(EVT_Hit, StateMachine_Primary);
-				AttackedObj->TriggerEvent(EVT_ReceiveHit, StateMachine_Primary);
-
-				if (IsPlayer && Player->PlayerFlags & PLF_HitgrabActive)
-				{
-					return;
-				}
-
-				const FHitData Data = InitHitDataByAttackLevel(false);
-				CreateCommonParticle(HitCommon.HitVFX, POS_Col,
-									 FVector(0, 0, 0),
-									 FRotator(HitCommon.HitAngle, 0, 0));
-				PlayCommonSound(HitCommon.HitSFX);
-				
-				AttackedObj->Hitstop = Data.Hitstop;
-				Hitstop = Data.Hitstop;
-			}
-			return;
-		}
+		if (!AttackedPlayer) return;
 		if (CheckBoxOverlap(AttackedObj, BOX_Hit, FGameplayTag::EmptyTag, BOX_Hurt, FGameplayTag::EmptyTag))
 		{
 			AttackedPlayer->AttackOwner = this;
@@ -591,7 +533,7 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 			if (AttackedPlayer->IsCorrectBlock(HitCommon.BlockType)) //check blocking
 			{
 				CallSubroutine(Subroutine_Cmn_OnBlock);
-
+				
 				CreateCommonParticle(Particle_Guard, POS_Enemy,
 				                     FVector(0, 100, 0),
 				                     FRotator(HitCommon.HitAngle, 0, 0));
@@ -636,7 +578,6 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 			}
 			else if (AttackedPlayer->SuperArmorSuccess(this))
 			{
-				AttackedPlayer->PlayerFlags &= ~PLF_IsStunned;
 				TriggerEvent(EVT_Hit, StateMachine_Primary);
 				if (AttackedPlayer->IsMainPlayer())
 				{
@@ -644,8 +585,8 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 				}
 
 				if (AttackedPlayer->SuperArmorData.ArmorHits > 0)
-					AttackedPlayer->SuperArmorData.ArmorHits--;
-
+					AttackedPlayer->SuperArmorData.
+					                ArmorHits--;
 				switch (AttackedPlayer->SuperArmorData.Type)
 				{
 				case ARM_Guard:
@@ -707,16 +648,13 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 				default:
 					break;
 				}
-
-				if (AttackedPlayer->SuperArmorData.bArmorDisableIncomingHit)
-					EnableHit(false);
 			}
 			else if ((AttackedPlayer->AttackFlags & ATK_IsAttacking) == 0)
 			{
 				AttackedPlayer->PlayerFlags &= ~PLF_ReceivedCounterHit;
 
 				CallSubroutine(Subroutine_Cmn_OnHit);
-
+				
 				TriggerEvent(EVT_Hit, StateMachine_Primary);
 				AttackedPlayer->TriggerEvent(EVT_ReceiveHit, StateMachine_Primary);
 				if (AttackedPlayer->IsMainPlayer())
@@ -756,10 +694,10 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 			else
 			{
 				AttackedPlayer->PlayerFlags |= PLF_ReceivedCounterHit;
-
+				
 				CallSubroutine(Subroutine_Cmn_OnHit);
 				CallSubroutine(Subroutine_Cmn_OnCounterHit);
-
+				
 				TriggerEvent(EVT_Hit, StateMachine_Primary);
 				TriggerEvent(EVT_CounterHit, StateMachine_Primary);
 				AttackedPlayer->TriggerEvent(EVT_ReceiveHit, StateMachine_Primary);
@@ -769,7 +707,7 @@ void ABattleObject::HandleHitCollision(ABattleObject* AttackedObj)
 					TriggerEvent(EVT_CounterHitMainPlayer, StateMachine_Primary);
 					AttackedPlayer->TriggerEvent(EVT_ReceiveHitMainPlayer, StateMachine_Primary);
 				}
-
+				
 				AttackedPlayer->AddColor = FLinearColor(1, 0, 0.0, 1);
 				AttackedPlayer->MulColor = FLinearColor(2.5, 0.1, 0.1, 1);
 				AttackedPlayer->AddFadeSpeed = 0.1;
@@ -1142,24 +1080,6 @@ FHitData ABattleObject::InitHitDataByAttackLevel(bool IsCounter)
 		break;
 	}
 
-	if (HitCommon.GuardSFXOverride != FGameplayTag::EmptyTag)
-	{
-		HitCommon.GuardSFX = HitCommon.GuardSFXOverride;
-	}
-	if (HitCommon.HitSFXOverride != FGameplayTag::EmptyTag)
-	{
-		HitCommon.HitSFX = HitCommon.HitSFXOverride;
-	}
-
-	if (HitCommon.GuardVFXOverride != FGameplayTag::EmptyTag)
-	{
-		HitCommon.GuardVFX = HitCommon.GuardVFXOverride;
-	}
-	if (HitCommon.HitVFXOverride != FGameplayTag::EmptyTag)
-	{
-		HitCommon.HitVFX = HitCommon.HitVFXOverride;
-	}
-
 	if (NormalHit.EnemyHitstopModifier == INT_MAX)
 		NormalHit.EnemyHitstopModifier = 0;
 	if (NormalHit.RecoverableDamagePercent == INT_MAX)
@@ -1417,13 +1337,6 @@ void ABattleObject::ScreenPosToWorldPos(const int32 X, const int32 Y, int32& Out
 	GameState->ScreenPosToWorldPos(X, Y, OutX, OutY);
 }
 
-void ABattleObject::WorldPosToScreenPos(const int32 X, const int32 Y, int32& OutX, int32& OutY) const
-{
-	if (!GameState) return;
-
-	GameState->WorldPosToScreenPos(X, Y, OutX, OutY);
-}
-
 void ABattleObject::TriggerEvent(EEventType EventType, FGameplayTag StateMachineName)
 {
 	if (EventType == EVT_Update) UpdateTime++;
@@ -1612,15 +1525,12 @@ void ABattleObject::CollisionView()
 			color = FLinearColor(0.f, 1.f, 1.f, .25f);
 		else
 			color = FLinearColor(0.f, 1.f, 0.f, .25f);
-		
-		FTransform OffsetTransform = FTransform::Identity;
-		if (GameState){OffsetTransform =  GameState->BattleSceneTransform;}
-		
 		for (const auto& LineSet : Lines.Last())
 		{
-			auto start = OffsetTransform.GetRotation().RotateVector(FVector( LineSet[0].X, 0,  LineSet[0].Y)) + OffsetTransform.GetLocation();
-			auto end = OffsetTransform.GetRotation().RotateVector(FVector( LineSet[1].X, 0,  LineSet[1].Y)) + OffsetTransform.GetLocation();
-			DrawDebugLine(GetWorld(), start, end, color.ToFColor(false),false, 1 / 60, 255, 2.f);
+			auto start = LineSet[0];
+			auto end = LineSet[1];
+			DrawDebugLine(GetWorld(), FVector(start.X, 0, start.Y), FVector(end.X, 0, end.Y), color.ToFColor(false),
+			              false, 1 / 60, 255, 2.f);
 		}
 	}
 	TArray<FVector2D> CurrentCorners;
@@ -1635,14 +1545,12 @@ void ABattleObject::CollisionView()
 	}
 	FLinearColor color = FLinearColor(1.f, 1.f, 0.f, .2f);
 
-	FTransform OffsetTransform = FTransform::Identity;
-	if (GameState){OffsetTransform =  GameState->BattleSceneTransform;}
-	
 	for (const auto& LineSet : CurrentLines)
 	{
-		auto start = OffsetTransform.GetRotation().RotateVector(FVector( LineSet[0].X, 0,  LineSet[0].Y)) + OffsetTransform.GetLocation();
-		auto end =  OffsetTransform.GetRotation().RotateVector(FVector( LineSet[1].X, 0,  LineSet[1].Y)) + OffsetTransform.GetLocation();
-		DrawDebugLine(GetWorld(), start, end, color.ToFColor(false),false, 1 / 60, 255, 2.f);
+		auto start = LineSet[0];
+		auto end = LineSet[1];
+		DrawDebugLine(GetWorld(), FVector(start.X, 0, start.Y), FVector(end.X, 0, end.Y), color.ToFColor(false), false,
+		              1 / 60, 255, 2.f);
 	}
 }
 
@@ -1700,10 +1608,6 @@ void FBattleObjectLog::LogForSyncTestFile(std::ofstream& file)
 
 void ABattleObject::UpdateVisuals()
 {
-	if (!IsActive) return;
-	if (!bRender) return;
-	if (IsPlayer && !Player->IsOnScreen()) return;
-	
 	if (IsValid(GameState))
 	{
 		if (GameState->BattleState.CurrentSequenceTime >= 0)
@@ -1711,6 +1615,7 @@ void ABattleObject::UpdateVisuals()
 			ScreenSpaceDepthOffset = 0;
 			if (DrawPriorityLinkObj)
 				ScreenSpaceDepthOffset = DrawPriorityLinkObj->ScreenSpaceDepthOffset;
+			OrthoBlendActive = FMath::Lerp(OrthoBlendActive, 0, 0.2);
 		}
 		else
 		{
@@ -1718,11 +1623,13 @@ void ABattleObject::UpdateVisuals()
 				ScreenSpaceDepthOffset = DrawPriorityLinkObj->ScreenSpaceDepthOffset;
 			else
 				ScreenSpaceDepthOffset = (MaxDrawPriority - DrawPriority) * 50;
+			OrthoBlendActive = FMath::Lerp(OrthoBlendActive, 1, 0.2);
 		}
 	}
 	else
 	{
 		ScreenSpaceDepthOffset = 0;
+		OrthoBlendActive = 1;
 	}
 
 	AddColor = FMath::Lerp(AddColor, AddFadeColor, AddFadeSpeed);
@@ -1845,6 +1752,7 @@ void ABattleObject::UpdateVisualsNoRollback()
 	if (LinkedParticle)
 	{
 		LinkedParticle->SetVariableFloat(FName("ScreenSpaceDepthOffset"), ScreenSpaceDepthOffset);
+		LinkedParticle->SetVariableFloat(FName("OrthoBlendActive"), OrthoBlendActive);
 	}
 	
 	TInlineComponentArray<UPrimitiveComponent*> Components(this);
@@ -1857,6 +1765,7 @@ void ABattleObject::UpdateVisualsNoRollback()
 			{
 				MIDynamic->SetScalarParameterValue(FName(TEXT("Transparency")), Transparency);
 				MIDynamic->SetScalarParameterValue(FName(TEXT("ScreenSpaceDepthOffset")), ScreenSpaceDepthOffset);
+				MIDynamic->SetScalarParameterValue(FName(TEXT("OrthoBlendActive")), OrthoBlendActive);
 				MIDynamic->SetVectorParameterValue(FName(TEXT("AddColor")), AddColor);
 				MIDynamic->SetVectorParameterValue(FName(TEXT("MulColor")), MulColor);
 				MIDynamic->SetVectorParameterValue(FName(TEXT("DamageColor")), DamageColor);
@@ -1869,36 +1778,7 @@ void ABattleObject::UpdateVisualsNoRollback()
 			{
 				MIDynamic->SetScalarParameterValue(FName(TEXT("Transparency")), Transparency);
 				MIDynamic->SetScalarParameterValue(FName(TEXT("ScreenSpaceDepthOffset")), ScreenSpaceDepthOffset);
-				MIDynamic->SetVectorParameterValue(FName(TEXT("DamageColor")), DamageColor);
-				MIDynamic->SetVectorParameterValue(FName(TEXT("DamageColor2")), DamageColor2);
-			}
-		}
-	}
-
-	if (!IsPlayer)
-	{
-		TArray<USkeletalMeshComponent*> SkeletalMeshComponents;
-		this->GetComponents(USkeletalMeshComponent::StaticClass(), SkeletalMeshComponents);
-
-		for (USkeletalMeshComponent* Mesh : SkeletalMeshComponents)
-		{
-			TArray<UMaterialInterface*> Mats = Mesh->GetMaterials();
-			for (int64 i = 0; i < Mesh->GetNumMaterials(); i++)
-			{
-				UMaterialInterface* Mat = Mesh->GetMaterial(i);
-				if (!Mat)
-				{
-					continue;
-				}
-
-				UMaterialInstanceDynamic* MIDynamic = Cast<UMaterialInstanceDynamic>(Mat);
-				if (!MIDynamic)
-				{
-					MIDynamic = UMaterialInstanceDynamic::Create(Mats[i], this);
-					Mesh->SetMaterial(i, MIDynamic);
-				}
-				MIDynamic->SetScalarParameterValue(TEXT("Transparency"), Transparency);
-				MIDynamic->SetScalarParameterValue(FName(TEXT("ScreenSpaceDepthOffset")), ScreenSpaceDepthOffset);
+				MIDynamic->SetScalarParameterValue(FName(TEXT("OrthoBlendActive")), OrthoBlendActive);
 				MIDynamic->SetVectorParameterValue(FName(TEXT("DamageColor")), DamageColor);
 				MIDynamic->SetVectorParameterValue(FName(TEXT("DamageColor2")), DamageColor2);
 			}
@@ -2026,8 +1906,6 @@ void ABattleObject::InitObject()
 	if (IsValid(LinkedParticle))
 	{
 		LinkedParticle->Deactivate();
-		LinkedParticle->DestroyComponent();
-		LinkedParticle = nullptr;
 	}
 	ObjectState->Parent = this;
 	ObjectState->Init();
@@ -2044,13 +1922,6 @@ void ABattleObject::InitObject()
 	else
 	{
 		SetActorScale3D(FVector(1, 1, 1));
-	}
-	
-	TInlineComponentArray<UPrimitiveComponent*> Components;
-	GetComponents(Components);
-	for (const auto& Component : Components)
-	{
-		Component->AddTickPrerequisiteActor(this);
 	}
 }
 
@@ -2143,10 +2014,10 @@ void ABattleObject::ResetObject()
 	{
 		LinkedParticle->SetVisibility(false);
 		LinkedParticle->Deactivate();
-		LinkedParticle->DestroyComponent();
 		LinkedParticle = nullptr;
 	}
 	RemoveLinkActor();
+	OrthoBlendActive = 1;
 	
 	IsActive = false;
 	PosX = 0;
@@ -2425,8 +2296,7 @@ void ABattleObject::SetTimeUntilNextCel(int32 InTime)
 
 void ABattleObject::SetCelDuration(int32 InTime)
 {
-	MaxCelTime = InTime;
-	TimeUntilNextCel = MaxCelTime;
+	TimeUntilNextCel = MaxCelTime = InTime;
 }
 
 void ABattleObject::AddPosXWithDir(int InPosX)
@@ -2664,22 +2534,18 @@ void ABattleObject::EnableHit(bool Enabled)
 	}
 }
 
-void ABattleObject::SetAttacking(bool Attacking, bool AllowCancel)
+void ABattleObject::SetAttacking(bool Attacking)
 {
 	if (Attacking)
 	{
 		AttackFlags |= ATK_IsAttacking;
-		AttackFlags &= ~ATK_HasHit;
 	}
 	else
 	{
 		AttackFlags &= ~ATK_IsAttacking;
 	}
+	AttackFlags &= ~ATK_HasHit;
 	AttackFlags &= ~ATK_HitActive;
-	if (IsPlayer)
-	{
-		Player->EnableChainCancel(AllowCancel);
-	}
 }
 
 void ABattleObject::SetPlayerHit(bool Enable)
@@ -2727,6 +2593,7 @@ void ABattleObject::SetHitOTG(bool Enable)
 		AttackFlags |= ATK_HitOTG;
 	else
 		AttackFlags &= ~ATK_HitOTG;
+
 }
 
 void ABattleObject::SetIgnorePushbackScaling(bool Ignore)
@@ -3161,6 +3028,7 @@ void ABattleObject::CreateCommonParticle(FGameplayTag Name, EPosType PosType, FV
 					NiagaraComponent->SetVariableVec2(FName("PivotOffset"), FVector2D(0, 0.5));
 				}
 				NiagaraComponent->SetVariableFloat(FName("ScreenSpaceDepthOffset"), ScreenSpaceDepthOffset);
+				NiagaraComponent->SetVariableFloat(FName("OrthoBlendActive"), OrthoBlendActive);
 				NiagaraComponent->SetCustomDepthStencilValue(2);
 				NiagaraComponent->SetBoundsScale(40000);
 				break;
@@ -3202,6 +3070,7 @@ void ABattleObject::CreateCharaParticle(FGameplayTag Name, EPosType PosType, FVe
 					NiagaraComponent->SetVariableVec2(FName("PivotOffset"), FVector2D(0, 0.5));
 				}
 				NiagaraComponent->SetVariableFloat(FName("ScreenSpaceDepthOffset"), ScreenSpaceDepthOffset);
+				NiagaraComponent->SetVariableFloat(FName("OrthoBlendActive"), OrthoBlendActive);
 				NiagaraComponent->SetCustomDepthStencilValue(2);
 				NiagaraComponent->SetBoundsScale(40000);
 				break;
@@ -3222,11 +3091,7 @@ void ABattleObject::LinkCommonParticle(FGameplayTag Name)
 			if (ParticleStruct.Name == Name && ParticleStruct.ParticleSystem)
 			{
 				if (IsValid(LinkedParticle))
-				{
 					LinkedParticle->Deactivate();
-					LinkedParticle->DestroyComponent();
-				}
-				LinkedParticle = nullptr;
 				LinkedParticle = UNiagaraFunctionLibrary::SpawnSystemAttached(
 					ParticleStruct.ParticleSystem, RootComponent, FName(), FVector(), FRotator(),
 					EAttachLocation::SnapToTargetIncludingScale, true);
@@ -3255,11 +3120,7 @@ void ABattleObject::LinkCharaParticle(FGameplayTag Name)
 			if (ParticleStruct.Name == Name && ParticleStruct.ParticleSystem)
 			{
 				if (IsValid(LinkedParticle))
-				{
 					LinkedParticle->Deactivate();
-					LinkedParticle->DestroyComponent();
-				}
-				LinkedParticle = nullptr;
 				LinkedParticle = UNiagaraFunctionLibrary::SpawnSystemAttached(
 					ParticleStruct.ParticleSystem, RootComponent, FName(), FVector(), FRotator(),
 					EAttachLocation::SnapToTargetIncludingScale, true);

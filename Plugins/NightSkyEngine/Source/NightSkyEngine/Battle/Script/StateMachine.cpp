@@ -3,7 +3,6 @@
 #include "StateAlias.h"
 #include "SubroutineState.h"
 #include "NightSkyEngine/Battle/Objects/PlayerObject.h"
-#include "NightSkyEngine/Miscellaneous/Logging.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(StateMachine)
 
@@ -41,7 +40,6 @@ bool FStateMachine::SetState(const FGameplayTag Name, bool bIsAlias)
 {
 	if (StateNames.Find(Name) == INDEX_NONE)
 	{
-		UE_LOGFMT(LogNightSkyEngine, Error, "Could not find state {0}! Cannot set state.", Name.ToString());
 		return false;
 	}
 
@@ -55,7 +53,7 @@ bool FStateMachine::SetState(const FGameplayTag Name, bool bIsAlias)
 	if (const auto SubroutineState = Cast<USubroutineState>(StateToEnter))
 	{
 		Parent->CallSubroutine(SubroutineState->SubroutineName);
-		return true;
+		return false;
 	}
 	if (!bIsAlias)
 	{
@@ -83,7 +81,6 @@ bool FStateMachine::ForceSetState(const FGameplayTag Name, bool bIsAlias)
 {
 	if (StateNames.Find(Name) == INDEX_NONE)
 	{
-		UE_LOGFMT(LogNightSkyEngine, Error, "Could not find state {0}! Cannot set state.", Name.ToString());
 		return false;
 	}
 	
@@ -91,7 +88,7 @@ bool FStateMachine::ForceSetState(const FGameplayTag Name, bool bIsAlias)
 	if (const auto SubroutineState = Cast<USubroutineState>(StateToEnter))
 	{
 		Parent->CallSubroutine(SubroutineState->SubroutineName);
-		return true;
+		return false;
 	}
 	if (!bIsAlias)
 	{
@@ -124,7 +121,7 @@ bool FStateMachine::ForceSetState(TSubclassOf<UState> Class, bool bIsAlias)
 			if (const auto SubroutineState = Cast<USubroutineState>(State))
 			{
 				Parent->CallSubroutine(SubroutineState->SubroutineName);
-				return true;
+				return false;
 			}
 			if (!bIsAlias)
 			{
@@ -148,7 +145,6 @@ bool FStateMachine::ForceSetState(TSubclassOf<UState> Class, bool bIsAlias)
 			return true;
 		}
 	}
-	UE_LOGFMT(LogNightSkyEngine, Error, "Could not find state of class {0}! Cannot set state.", Class->GetName());
 	return false;
 }
 

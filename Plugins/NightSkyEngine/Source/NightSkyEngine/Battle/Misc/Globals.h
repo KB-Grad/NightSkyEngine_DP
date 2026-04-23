@@ -1,11 +1,6 @@
 ﻿#pragma once
 
-/**
- * DO NOT TOUCH. These are integral to the unit scale system, and adjusting them will break rendering
- * if you don't know what you're doing.
- */
-#define OBJ_SCALE 0.43f
-#define COORD_SCALE ((float)1000 / OBJ_SCALE)
+#define COORD_SCALE ((double)1000 / 0.43)
 
 /**
  * Implementation of integer square root.

@@ -24,12 +24,6 @@ struct FAnimStruct
 	UAnimSequenceBase* AnimSequence;
 	UPROPERTY(EditAnywhere)
 	UPaperFlipbook* Flipbook;
-	
-	FAnimStruct(): AnimSequence(nullptr), Flipbook(nullptr) {}
-
-	explicit FAnimStruct(UAnimSequenceBase* SourceSequence) : AnimSequence(SourceSequence), Flipbook(nullptr) {}
-
-	explicit FAnimStruct(UPaperFlipbook* SourceFlipbook) : AnimSequence(nullptr), Flipbook(SourceFlipbook) {}
 };
 
 USTRUCT()

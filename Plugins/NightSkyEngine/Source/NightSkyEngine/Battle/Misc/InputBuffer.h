@@ -41,11 +41,6 @@ public:
 	 */
 	int32 InputBufferInternal[InputBufferSize] = { 16 };
 	/**
-	 * All stored inputs.
-	 * Inputs are stored with the newest at the end and the oldest at the beginning.
-	 */
-	int8_t InputBufferValid[InputBufferSize] = { 16 };
-	/**
 	 * All input times.
 	 * Input times are looped over and incremented every actionable frame.
 	 */
@@ -139,8 +134,4 @@ public:
 	 * Flips the directional inputs in the buffer. For use after a character switches sides.
 	 */
 	void FlipInputsInBuffer();
-	/**
-	 * Resets the input buffer, as if it were the start of a match.
-	 */
-	void ResetBuffer();
 };

@@ -72,10 +72,8 @@ void FInputBuffer::Update(int32 Input, bool bStopped)
 	{
 		InputBufferInternal[i] = InputBufferInternal[i + 1];
 		InputTime[i] = InputTime[i + 1];
-		InputBufferValid[i] = InputBufferValid[i + 1];
 	}
 	InputBufferInternal[InputBufferSize - 1] = Input;
-	InputBufferValid[InputBufferSize - 1] = 1;
 	InputTime[InputBufferSize - 1] = 0;
 }
 
@@ -84,7 +82,6 @@ void FInputBuffer::Emplace(int32 Input, uint32 Index)
 	if (Index > InputBufferSize - 1) return;
 
 	InputBufferInternal[Index] |= Input;
-	InputBufferValid[Index] = 1;
 }
 
 bool FInputBuffer::CheckInputCondition(const FInputCondition& InputCondition)
@@ -262,7 +259,7 @@ bool FInputBuffer::CheckInputSequenceOnce() const
 		{
 			FramesSinceLastMatch += InputTime[i + 1];
 			if (FramesSinceLastMatch > InputSequence[0].Lenience + InputSequence[InputIndex + 1].Hold) return false;
-			if (InputBufferValid[i] == 1 && !(InputBufferInternal[i] & InputSequence[0].InputFlag))
+			if (!(InputBufferInternal[i] & InputSequence[0].InputFlag))
 				return true;
 			i--;
 			continue;
@@ -321,7 +318,7 @@ bool FInputBuffer::CheckInputSequenceOnceStrict() const
 		{
 			FramesSinceLastMatch += InputTime[i + 1];
 			if (FramesSinceLastMatch > InputSequence[0].Lenience + InputSequence[InputIndex + 1].Hold) return false;
-			if (InputBufferValid[i] == 1 && (InputBufferInternal[i] ^ InputSequence[0].InputFlag) << 27 == 0)
+			if ((InputBufferInternal[i] ^ InputSequence[0].InputFlag) << 27 == 0)
 				return true;
 			i--;
 			continue;
@@ -650,15 +647,5 @@ void FInputBuffer::FlipInputsInBuffer()
 		x = x << 2 | x << 3;
 
 		InputBufferInternal[i] = InputBufferInternal[i] ^ x;
-	}
-}
-
-void FInputBuffer::ResetBuffer()
-{
-	for (int i = 0; i < InputBufferSize; i++)
-	{
-		InputBufferInternal[i] = 0;
-		InputTime[i] = 0;
-		InputBufferValid[i] = 0;
 	}
 }

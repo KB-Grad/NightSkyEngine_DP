@@ -1,3 +1,5 @@
+// Copyright Screaming Goose Games. All Rights Reserved.
+
 using UnrealBuildTool;
 
 public class CollisionEditor : ModuleRules

@@ -83,7 +83,6 @@ void UNightSkyGameInstance::RollbackReplay(int32 FramesToRollback) const
 {
 	for (int i = 0; i < FramesToRollback; i++)
 	{
-		if (!CurrentReplay) return;
 		CurrentReplay->LengthInFrames--;
 		CurrentReplay->InputsP1.Pop();
 		CurrentReplay->InputsP2.Pop();
