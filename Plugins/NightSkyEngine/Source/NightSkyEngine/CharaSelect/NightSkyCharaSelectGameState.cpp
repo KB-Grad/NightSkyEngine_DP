@@ -75,13 +75,13 @@ void ANightSkyCharaSelectGameState::AddColorIndex(int InColor, bool IsP1)
 {
 	if (IsP1)
 	{
-		if (P1Charas.Num() >= GameInstance->BattleData.PlayerListP1.Num())
+		if (P1Charas.Num() > GameInstance->BattleData.PlayerListP1.Num())
 			return;
 		GameInstance->BattleData.ColorIndicesP1[P1Charas.Num() - 1] = InColor;
 	}
 	else
 	{
-		if (P2Charas.Num() >= GameInstance->BattleData.PlayerListP2.Num())
+		if (P2Charas.Num() > GameInstance->BattleData.PlayerListP2.Num())
 			return;
 		GameInstance->BattleData.ColorIndicesP2[P2Charas.Num() - 1] = InColor;
 	}
